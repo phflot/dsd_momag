@@ -8,7 +8,6 @@ import time
 import numpy as np
 import torch
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 
 import raft.datasets
 from raft.utils import flow_viz
