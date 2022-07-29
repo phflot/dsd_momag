@@ -1,8 +1,8 @@
 # RAFT wrappers based on the official RAFT github https://github.com/princeton-vl/RAFT
 
 from os import mkdir
-from os.path import join as fullfile
-from os.path import isdir
+from os.path import join
+from os.path import isdir, dirname
 import argparse
 
 import torch
@@ -16,8 +16,13 @@ import raft.datasets as datasets
 from raft.utils.flow_viz import flow_to_image
 from raft.utils.utils import InputPadder
 
+from inspect import getsourcefile
+from os.path import abspath, exists
+
 import numpy as np
 import cv2
+
+from urllib.request import urlretrieve
 
 try:
     from torch.cuda.amp import GradScaler
@@ -26,24 +31,40 @@ except:
     class GradScaler:
         def __init__(self):
             pass
+
         def scale(self, loss):
             return loss
+
         def unscale_(self, optimizer):
             pass
+
         def step(self, optimizer):
             optimizer.step()
+
         def update(self):
             pass
 
 
 class RAFTOpticalFlow:
     def __init__(self, iters=20,
-                 model='C:/Users/Philipp/Documents/projects/2021/motion_magnification/RAFT/models/raft-sintel.pth',
+                 model=None,
                  path=None,
                  small=False,
                  mixed_precision=False,
                  alternate_corr=False):
-        
+
+        if model is None:
+            model_path = join(dirname(abspath(getsourcefile(lambda: 0))), "models")
+            model = join(model_path, "raft-casme2.pth")
+        if not exists(model):
+            if not isdir(model_path):
+                mkdir(model_path)
+            print("Model could not be found, downloading raft-casme2 model...")
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+            urlretrieve("https://cloud.hiz-saarland.de/s/McMNXZ5o7xteE6n/download/raft-casme2.pth", model)
+            print("done.")
+
         args = argparse.Namespace(
             model=model,
             path=path,
@@ -56,7 +77,8 @@ class RAFTOpticalFlow:
         model.load_state_dict(torch.load(args.model))
 
         self.model = model.module
-        self.model.to('cuda')
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
         self.model.eval()
         self.last_flow = None
         self.padder = None
@@ -64,9 +86,9 @@ class RAFTOpticalFlow:
 
     def calc(self, ref, frame, flow=None):
         ref_torch = torch.from_numpy(ref).permute(2, 0, 1).float()
-        ref_torch = ref_torch[None].to('cuda')
+        ref_torch = ref_torch[None].to(self.device)
         frame_torch = torch.from_numpy(frame).permute(2, 0, 1).float()
-        frame_torch = frame_torch[None].to('cuda')
+        frame_torch = frame_torch[None].to(self.device)
 
         if self.padder is None:
             self.padder = InputPadder(ref_torch.shape)
@@ -213,8 +235,8 @@ class RAFTTrainer:
 
         args = self.args
 
-        if not isdir(fullfile(args.path, 'checkpoints')):
-            mkdir(fullfile(args.path, 'checkpoints'))
+        if not isdir(join(args.path, 'checkpoints')):
+            mkdir(join(args.path, 'checkpoints'))
 
         self.model = nn.DataParallel(RAFT(args), device_ids=args.gpus)
         print("Parameter Count: %d" % self._count_parameters())
@@ -264,7 +286,7 @@ class RAFTTrainer:
                 logger.push(metrics)
 
                 if total_steps % VAL_FREQ == VAL_FREQ - 1:
-                    PATH = fullfile(args.path, 'checkpoints/%d_%s.pth' % (total_steps + 1, args.name))
+                    PATH = join(args.path, 'checkpoints/%d_%s.pth' % (total_steps + 1, args.name))
                     torch.save(self.model.state_dict(), PATH)
 
                     results = {}
@@ -289,7 +311,7 @@ class RAFTTrainer:
                     break
 
         logger.close()
-        PATH = fullfile(args.path, 'checkpoints/%s.pth' % args.name)
+        PATH = join(args.path, 'checkpoints/%s.pth' % args.name)
         torch.save(self.model.state_dict(), PATH)
 
         return PATH

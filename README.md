@@ -1,6 +1,6 @@
 # Sparse PCA-based Lagrangian Motion Magnification on Faces
 
-The implementation of landmark-based, selective motion magnification can be found [here](https://github.com/phflot/momag). The sparse PCA-based decomposition and demo has been implemented by [@cosmas-heiss](https://github.com/cosmas-heiss) and the RAFT training on faces for micro-expressions by [@phflot](https://github.com/phflot).
+The implementation of landmark-based, selective motion magnification can be found [here](https://github.com/phflot/momag). The sparse PCA-based decomposition and demo has been implemented by @cosmas-heiss and the RAFT training on faces for micro-expressions by @phflot.
 
 ![Fig1](img/momag.PNG)
 
