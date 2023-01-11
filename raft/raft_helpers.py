@@ -55,7 +55,7 @@ class RAFTOpticalFlow:
 
         if model is None:
             model_path = join(dirname(abspath(getsourcefile(lambda: 0))), "models")
-            model = join(model_path, "raft-casme2.pth")
+            model = join(model_path, "raft-casme3.pth")
         if not exists(model):
             if not isdir(model_path):
                 mkdir(model_path)
@@ -63,7 +63,6 @@ class RAFTOpticalFlow:
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
             urlretrieve("https://cloud.hiz-saarland.de/s/TkNX8neWfeWJAEg/download/raft-casme3.pth", model)
-            urlretrieve("/raft-casme3.pth", model)
             print("done.")
 
 
