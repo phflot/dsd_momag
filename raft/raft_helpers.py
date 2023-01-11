@@ -62,8 +62,10 @@ class RAFTOpticalFlow:
             print("Model could not be found, downloading raft-casme2 model...")
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
-            urlretrieve("https://cloud.hiz-saarland.de/s/McMNXZ5o7xteE6n/download/raft-casme2.pth", model)
+            urlretrieve("https://cloud.hiz-saarland.de/s/TkNX8neWfeWJAEg/download/raft-casme3.pth", model)
+            urlretrieve("/raft-casme3.pth", model)
             print("done.")
+
 
         args = argparse.Namespace(
             model=model,
